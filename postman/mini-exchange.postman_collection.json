@@ -1,0 +1,1173 @@
+{
+  "info": {
+    "name": "Mini Exchange API",
+    "description": "Every endpoint of the Mini Exchange. Run the folders in order (or Run collection): later requests use ids saved by earlier ones. Set baseUrl if the API is not on port 8000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "description": "",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Database ok\", () => pm.expect(pm.response.json().database).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Instruments",
+      "description": "",
+      "item": [
+        {
+          "name": "Create instrument",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ]
+            },
+            "description": "Lists a new instrument. A random symbol is generated so the collection can be run many times.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{symbol}}\",\n  \"name\": \"Demo Holdings\",\n  \"currency\": \"KZT\",\n  \"tick_size\": \"0.5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"symbol\", \"D\" + Math.floor(Math.random() * 1e6));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"instrumentId\", body.id);",
+                  "pm.test(\"Symbol saved\", () => pm.expect(body.symbol).to.eql(pm.collectionVariables.get(\"symbol\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List instruments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments?is_active=true&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ],
+              "query": [
+                {
+                  "key": "is_active",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"New instrument listed\", () => pm.expect(pm.response.json().map(i => i.id)).to.include(pm.collectionVariables.get(\"instrumentId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get instrument by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{instrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{instrumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Same id\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"instrumentId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update instrument",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{instrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{instrumentId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Holdings JSC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Renamed\", () => pm.expect(pm.response.json().name).to.eql(\"Demo Holdings JSC\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create instrument to delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{tempSymbol}}\",\n  \"name\": \"Temporary listing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"tempSymbol\", \"T\" + Math.floor(Math.random() * 1e6));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"tempInstrumentId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete instrument",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{tempInstrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{tempInstrumentId}}"
+              ]
+            },
+            "description": "Only instruments without orders can be deleted; traded ones are halted instead."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get deleted instrument (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{tempInstrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{tempInstrumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders and matching",
+      "description": "",
+      "item": [
+        {
+          "name": "Place sell order (alice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"alice\",\n  \"side\": \"sell\",\n  \"price\": \"1000\",\n  \"quantity\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"aliceOrderId\", body.order.id);",
+                  "pm.test(\"Rests in the book\", () => { pm.expect(body.order.status).to.eql(\"open\"); pm.expect(body.trades).to.have.length(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Place sell order (bob)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"bob\",\n  \"side\": \"sell\",\n  \"price\": \"999.5\",\n  \"quantity\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"bobOrderId\", pm.response.json().order.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Place buy order that matches (carol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Crosses the book: buys bob's cheaper 50 first, then 70 of alice's 100.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"carol\",\n  \"side\": \"buy\",\n  \"price\": \"1000\",\n  \"quantity\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"carolOrderId\", body.order.id);",
+                  "pm.collectionVariables.set(\"tradeId\", body.trades[0].id);",
+                  "pm.test(\"Fully filled by two trades\", () => {",
+                  "    pm.expect(body.order.status).to.eql(\"filled\");",
+                  "    pm.expect(body.trades).to.have.length(2);",
+                  "});",
+                  "pm.test(\"Best price first: bob 50 @ 999.5, then alice 70 @ 1000\", () => {",
+                  "    pm.expect(Number(body.trades[0].price)).to.eql(999.5);",
+                  "    pm.expect(body.trades[0].quantity).to.eql(50);",
+                  "    pm.expect(Number(body.trades[1].price)).to.eql(1000);",
+                  "    pm.expect(body.trades[1].quantity).to.eql(70);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get order book",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{instrumentId}}/book?depth=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{instrumentId}}",
+                "book"
+              ],
+              "query": [
+                {
+                  "key": "depth",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const book = pm.response.json();",
+                  "pm.test(\"30 left at 1000\", () => {",
+                  "    pm.expect(book.asks).to.have.length(1);",
+                  "    pm.expect(book.asks[0].quantity).to.eql(30);",
+                  "    pm.expect(Number(book.last_price)).to.eql(1000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders?instrument_id={{instrumentId}}&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "instrument_id",
+                  "value": "{{instrumentId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Three orders\", () => pm.expect(pm.response.json()).to.have.length(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{aliceOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{aliceOrderId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const order = pm.response.json();",
+                  "pm.test(\"Partially filled\", () => {",
+                  "    pm.expect(order.status).to.eql(\"partially_filled\");",
+                  "    pm.expect(order.remaining_quantity).to.eql(30);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update order (amend price)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{aliceOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{aliceOrderId}}"
+              ]
+            },
+            "description": "Changing the price sends the order to the back of the queue at its new price.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": \"1000.5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"New price\", () => pm.expect(Number(pm.response.json().order.price)).to.eql(1000.5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete order (cancel)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{aliceOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{aliceOrderId}}"
+              ]
+            },
+            "description": "Cancels the unfilled 30. The order record stays for the audit trail."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelled\", () => pm.expect(pm.response.json().status).to.eql(\"cancelled\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Trades",
+      "description": "",
+      "item": [
+        {
+          "name": "List trades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trades?instrument_id={{instrumentId}}&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trades"
+              ],
+              "query": [
+                {
+                  "key": "instrument_id",
+                  "value": "{{instrumentId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Two trades\", () => pm.expect(pm.response.json()).to.have.length(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List trades of an order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trades?order_id={{carolOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trades"
+              ],
+              "query": [
+                {
+                  "key": "order_id",
+                  "value": "{{carolOrderId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Carol bought twice\", () => pm.expect(pm.response.json()).to.have.length(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get trade by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trades/{{tradeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trades",
+                "{{tradeId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bob was the seller\", () => pm.expect(pm.response.json().sell_order_id).to.eql(pm.collectionVariables.get(\"bobOrderId\")));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audit trail",
+      "description": "",
+      "item": [
+        {
+          "name": "Order history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-events?entity_type=order&entity_id={{aliceOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-events"
+              ],
+              "query": [
+                {
+                  "key": "entity_type",
+                  "value": "order"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{aliceOrderId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Placed, filled, amended, cancelled\", () => pm.expect(pm.response.json().map(e => e.action)).to.eql([\"cancelled\", \"amended\", \"filled\", \"placed\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recent events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-events?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error cases",
+      "description": "",
+      "item": [
+        {
+          "name": "Invalid order (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"eve\",\n  \"side\": \"hold\",\n  \"price\": \"-5\",\n  \"quantity\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Price off the tick size (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"eve\",\n  \"side\": \"buy\",\n  \"price\": \"1000.25\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Order not found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "999999999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel a cancelled order (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{aliceOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{aliceOrderId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate symbol (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{symbol}}\",\n  \"name\": \"Duplicate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete a traded instrument (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{instrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{instrumentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Halt trading",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instruments/{{instrumentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instruments",
+                "{{instrumentId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Halted\", () => pm.expect(pm.response.json().is_active).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Order on a halted instrument (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrument_id\": {{instrumentId}},\n  \"trader\": \"eve\",\n  \"side\": \"buy\",\n  \"price\": \"1000\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "symbol",
+      "value": ""
+    },
+    {
+      "key": "instrumentId",
+      "value": ""
+    },
+    {
+      "key": "tempSymbol",
+      "value": ""
+    },
+    {
+      "key": "tempInstrumentId",
+      "value": ""
+    },
+    {
+      "key": "aliceOrderId",
+      "value": ""
+    },
+    {
+      "key": "bobOrderId",
+      "value": ""
+    },
+    {
+      "key": "carolOrderId",
+      "value": ""
+    },
+    {
+      "key": "tradeId",
+      "value": ""
+    }
+  ]
+}

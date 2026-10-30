@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Packaged .env archive for submission
+*.zip
+
+# Local scratch files
+tmp/
